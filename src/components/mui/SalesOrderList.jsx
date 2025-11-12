@@ -1,89 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Box,
     Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    IconButton,
     Typography,
-    Chip,
-    Tooltip,
-    CircularProgress,
-    Alert,
-    Snackbar,
+    IconButton,
+    Button,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
-    Button,
-    TablePagination,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Collapse,
-    TextField,
-    InputAdornment,
-    Menu,
-    ListItemIcon,
-    ListItemText,
-    Checkbox,
-    Divider,
-    TableSortLabel,
+    Snackbar,
+    Alert,
+    Chip,
+    Tooltip,
 } from '@mui/material';
 import {
     Add as AddIcon,
-    KeyboardArrowDown as ExpandIcon,
-    KeyboardArrowUp as CollapseIcon,
     Edit as EditIcon,
     Delete as DeleteIcon,
     Refresh as RefreshIcon,
-    Search as SearchIcon,
-    FilterList as FilterIcon,
-    Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useHistory } from 'react-router-dom';
+import { MaterialReactTable } from 'material-react-table';
 import SalesOrderGridMUI from './SalesOrderGridMUI';
 
 const SalesOrderList = () => {
     const [masterData, setMasterData] = useState([]);
-    const [filteredData, setFilteredData] = useState([]);
-    const [expandedRows, setExpandedRows] = useState(new Set());
     const [loading, setLoading] = useState(true);
     const [deleteDialog, setDeleteDialog] = useState({
         open: false,
-        record: null
+        record: null,
     });
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-
-    const [searchText, setSearchText] = useState('');
-    const [sortColumn, setSortColumn] = useState(null);
-    const [sortDirection, setSortDirection] = useState('asc');
-
-    const [columnFilters, setColumnFilters] = useState({
-        SONo: [],
-        Division: [],
-        SOType: [],
-        CustomerName: [],
-        CreatedBy: [],
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: '',
+        severity: 'info',
     });
-
-    const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
-    const [activeFilterColumn, setActiveFilterColumn] = useState(null);
     const history = useHistory();
+
+
     useEffect(() => {
         fetchMasterData();
     }, []);
-
-    useEffect(() => {
-        applyFiltersAndSort();
-    }, [masterData, searchText, sortColumn, sortDirection, columnFilters]);
 
     const fetchMasterData = async () => {
         try {
@@ -92,120 +50,13 @@ const SalesOrderList = () => {
                 'http://122.179.135.100:8095/wsDataPool/WebAPI.aspx?op=SAL_SalesOrderMaster_List'
             );
             const data = await response.json();
+            console.log("see master data:", data)
             setMasterData(data || []);
         } catch (error) {
-            showSnackbar('Error fetching sales orders: ' + (error).message, 'error');
+            showSnackbar('Error fetching sales orders: ' + error.message, 'error');
         } finally {
             setLoading(false);
         }
-    };
-
-    const applyFiltersAndSort = () => {
-        let result = [...masterData];
-
-        if (searchText.trim()) {
-            const search = searchText.toLowerCase();
-            result = result.filter((row) =>
-                Object.values(row).some((val) =>
-                    String(val).toLowerCase().includes(search)
-                )
-            );
-        }
-
-        Object.entries(columnFilters).forEach(([column, values]) => {
-            if (values.length > 0) {
-                result = result.filter((row) =>
-                    values.includes(row[column])
-                );
-            }
-        });
-
-        if (sortColumn) {
-            result.sort((a, b) => {
-                const aVal = a[sortColumn];
-                const bVal = b[sortColumn];
-
-                let comparison = 0;
-
-                if (sortColumn === 'SODate' || sortColumn === 'UpdatedDate') {
-                    const dateA = new Date(aVal || 0).getTime();
-                    const dateB = new Date(bVal || 0).getTime();
-                    comparison = dateA - dateB;
-                } else if (sortColumn === 'SONo') {
-                    const numA = parseInt(String(aVal).replace(/\D/g, '') || '0');
-                    const numB = parseInt(String(bVal).replace(/\D/g, '') || '0');
-                    comparison = numA - numB;
-                } else {
-                    comparison = String(aVal).localeCompare(String(bVal));
-                }
-
-                return sortDirection === 'asc' ? comparison : -comparison;
-            });
-        }
-
-        setFilteredData(result);
-        setPage(0);
-    };
-
-    const handleSort = (column) => {
-        if (sortColumn === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortColumn(column);
-            setSortDirection('asc');
-        }
-    };
-
-    const openFilterMenu = (event, column) => {
-        setFilterMenuAnchor(event.currentTarget);
-        setActiveFilterColumn(column);
-    };
-
-    const closeFilterMenu = () => {
-        setFilterMenuAnchor(null);
-        setActiveFilterColumn(null);
-    };
-
-    const getUniqueValues = (column) => {
-        const values = masterData.map((row) => row[column]).filter(Boolean);
-        return Array.from(new Set(values)).sort();
-    };
-
-    const toggleFilterValue = (column, value) => {
-        setColumnFilters((prev) => {
-            const current = prev[column];
-            const updated = current.includes(value)
-                ? current.filter((v) => v !== value)
-                : [...current, value];
-            return { ...prev, [column]: updated };
-        });
-    };
-
-    const clearColumnFilter = (column) => {
-        setColumnFilters((prev) => ({ ...prev, [column]: [] }));
-    };
-
-    const clearAllFilters = () => {
-        setColumnFilters({
-            SONo: [],
-            Division: [],
-            SOType: [],
-            CustomerName: [],
-            CreatedBy: [],
-        });
-        setSearchText('');
-        setSortColumn(null);
-        setSortDirection('asc');
-    };
-
-    const toggleChildGrid = (rowId) => {
-        const newExpanded = new Set(expandedRows);
-        if (newExpanded.has(rowId)) {
-            newExpanded.delete(rowId);
-        } else {
-            newExpanded.add(rowId);
-        }
-        setExpandedRows(newExpanded);
     };
 
     const handleEdit = (row) => {
@@ -232,7 +83,7 @@ const SalesOrderList = () => {
                 showSnackbar(result?.[0]?.ErrMsg || 'Error deleting sales order', 'error');
             }
         } catch (error) {
-            showSnackbar('Error deleting sales order: ' + (error).message, 'error');
+            showSnackbar('Error deleting sales order: ' + error.message, 'error');
         }
     };
 
@@ -240,35 +91,196 @@ const SalesOrderList = () => {
         setSnackbar({ open: true, message, severity });
     };
 
-    const handleChangePage = (_event, newPage) => setPage(newPage);
+    // Universal dynamic sorting function that detects data type automatically
+    const dynamicSort = (rowA, rowB, columnId) => {
+        const a = rowA.getValue(columnId);
+        const b = rowB.getValue(columnId);
 
-    const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
+        // Handle null/undefined values
+        if (a == null && b == null) return 0;
+        if (a == null) return 1;
+        if (b == null) return -1;
+
+        // Try to detect if values are dates
+        const dateA = new Date(a);
+        const dateB = new Date(b);
+        const isDateA = !isNaN(dateA.getTime()) && typeof a === 'string' &&
+            (a.includes('-') || a.includes('/') || a.includes('T'));
+        const isDateB = !isNaN(dateB.getTime()) && typeof b === 'string' &&
+            (b.includes('-') || b.includes('/') || b.includes('T'));
+
+        if (isDateA && isDateB) {
+            return dateA.getTime() - dateB.getTime();
+        }
+
+        // Try to detect if values are pure numbers
+        const numA = Number(a);
+        const numB = Number(b);
+
+        if (!isNaN(numA) && !isNaN(numB) && typeof a !== 'string' ||
+            (!isNaN(numA) && !isNaN(numB) && String(a).trim() === String(numA) && String(b).trim() === String(numB))) {
+            return numA - numB;
+        }
+
+        // Convert to strings for further analysis
+        const strA = String(a);
+        const strB = String(b);
+
+        // Check if strings contain numbers (alphanumeric)
+        const hasNumbersA = /\d/.test(strA);
+        const hasNumbersB = /\d/.test(strB);
+
+        if (hasNumbersA && hasNumbersB) {
+            // Alphanumeric sorting: split into text and number parts
+            const regex = /(\d+)|(\D+)/g;
+            const partsA = strA.match(regex) || [];
+            const partsB = strB.match(regex) || [];
+
+            const maxLength = Math.max(partsA.length, partsB.length);
+
+            for (let i = 0; i < maxLength; i++) {
+                const partA = partsA[i] || '';
+                const partB = partsB[i] || '';
+
+                // Both parts are numbers
+                const isNumPartA = /^\d+$/.test(partA);
+                const isNumPartB = /^\d+$/.test(partB);
+
+                if (isNumPartA && isNumPartB) {
+                    const diff = parseInt(partA) - parseInt(partB);
+                    if (diff !== 0) return diff;
+                } else {
+                    // String comparison
+                    const comparison = partA.localeCompare(partB, undefined, {
+                        sensitivity: 'base',
+                        numeric: true
+                    });
+                    if (comparison !== 0) return comparison;
+                }
+            }
+
+            return 0;
+        }
+
+        // Default: string comparison with natural sorting
+        return strA.localeCompare(strB, undefined, {
+            sensitivity: 'base',
+            numeric: true
+        });
     };
 
-    const getActiveFilterCount = () => {
-        return Object.values(columnFilters).reduce((sum, arr) => sum + arr.length, 0);
+    // Custom "contains" filter function for all columns
+    const containsFilterFn = (row, id, filterValue) => {
+        const cellValue = row.getValue(id);
+        if (cellValue == null) return false;
+
+        const searchValue = String(filterValue).toLowerCase();
+        const cellString = String(cellValue).toLowerCase();
+
+        return cellString.includes(searchValue);
     };
 
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    minHeight: '100vh',
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <CircularProgress size={50} thickness={4} />
-            </Box>
-        );
-    }
+    // Generate columns dynamically from data
+    const columns = useMemo(() => {
+        if (!masterData?.length) return [];
+        const excludedKeys = ['Division', "CreatedDate", "CreatedBy", "UpdatedBy", "UpdatedDate"];
 
-    const currentPageData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-    const activeFilterCount = getActiveFilterCount();
+        return Object.keys(masterData[0])
+            .filter(key => !excludedKeys.includes(key))
+            .map(key => {
+                const lowerKey = key.toLowerCase();
+                const isDateField = lowerKey.includes('date') || lowerKey.includes('time');
+                const isKeyField = lowerKey.includes('no') || lowerKey.includes('id');
+                const trimmedKey = key?.trim();
+
+                // Helper function to format cell value consistently
+                const formatCellValue = (val) => {
+                    if (val == null || val === '') return '';
+
+                    if (isDateField) {
+                        const date = new Date(val);
+                        if (!isNaN(date.getTime())) {
+                            // Check if the original value contains time components
+                            const hasTime = String(val).includes(':') ||
+                                String(val).includes('T') ||
+                                String(val).includes('AM') ||
+                                String(val).includes('PM');
+
+                            return hasTime || lowerKey.includes('time') || lowerKey.includes('updated')
+                                ? date.toLocaleString()
+                                : date.toLocaleDateString();
+                        }
+                    }
+                    return String(val);
+                };
+
+                // Get unique values for this column (format dates for filtering)
+                const uniqueValues = [...new Set(
+                    masterData
+                        .map(row => formatCellValue(row[key]))
+                        .filter(val => val !== '')
+                )].sort((a, b) => {
+                    // Sort unique values for better UX
+                    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+                });
+
+                return {
+                    accessorKey: trimmedKey,
+                    header: trimmedKey,
+                    size: 20,
+                    sortingFn: dynamicSort,
+                    // Enable autocomplete filter with unique values for searchable dropdowns
+                    filterVariant: uniqueValues.length <= 100 ? 'autocomplete' : 'text',
+                    filterSelectOptions: uniqueValues.length <= 100
+                        ? uniqueValues
+                        : undefined,
+                    // Use contains filter for text fields
+                    filterFn: uniqueValues.length > 100 ? containsFilterFn : (row, id, filterValue) => {
+                        const cellValue = row.getValue(id);
+                        const formattedValue = formatCellValue(cellValue);
+
+                        // Handle array of filter values (for autocomplete multi-select)
+                        if (Array.isArray(filterValue)) {
+                            return filterValue.includes(formattedValue);
+                        }
+
+                        // Exact match for single value in autocomplete
+                        return formattedValue === filterValue;
+                    },
+                    Cell: ({ cell }) => {
+                        const value = cell.getValue();
+
+                        if (value == null || value === '') return '';
+                        if (isDateField) {
+                            const date = new Date(value);
+                            if (!isNaN(date.getTime())) {
+                                // Check if the original value contains time components
+                                const hasTime = String(value).includes(':') ||
+                                    String(value).includes('T') ||
+                                    String(value).includes('AM') ||
+                                    String(value).includes('PM');
+
+                                return hasTime || lowerKey.includes('time') || lowerKey.includes('updated')
+                                    ? date.toLocaleString()
+                                    : date.toLocaleDateString();
+                            }
+                        }
+                        if (isKeyField) {
+                            return (
+                                <Chip
+                                    label={value}
+                                    size="small"
+                                    sx={{ fontWeight: 600 }}
+                                    color="primary"
+                                    variant="outlined"
+                                />
+                            );
+                        }
+                        return value;
+                    },
+                };
+            });
+    }, [masterData]);
 
     return (
         <Box sx={{ minHeight: '100vh', width: '100%', py: 3, px: 2, bgcolor: '#f5f5f5' }}>
@@ -291,343 +303,103 @@ const SalesOrderList = () => {
                     </Typography>
                 </Box>
 
-                <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <TextField
-                        size="small"
-                        placeholder="Search all columns..."
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        sx={{ flexGrow: 1, minWidth: 300 }}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon />
-                                </InputAdornment>
-                            ),
-                            endAdornment: searchText && (
-                                <InputAdornment position="end">
-                                    <IconButton size="small" onClick={() => setSearchText('')}>
-                                        <ClearIcon fontSize="small" />
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        {(activeFilterCount > 0 || searchText || sortColumn) && (
+                <MaterialReactTable
+                    columns={columns}
+                    data={masterData}
+                    state={{ isLoading: loading }}
+                    enableRowActions
+                    enableColumnFilterModes={false}
+                    enableColumnOrdering={false}
+                    enableColumnDragging={false}
+                    enableGrouping
+                    enablePinning
+                    enableColumnResizing={false}
+                    enableExpanding
+                    enableGlobalFilter={true}
+                    enableColumnFilters={true}
+                    enableColumnActions={false}
+                    positionActionsColumn="last"
+                    enableFilterMatchHighlighting={true}
+                    muiFilterTextFieldProps={{
+                        sx: { minWidth: '150px', padding: 0 },
+                        variant: 'outlined',
+                        size: 'small',
+                        InputProps: {
+                            sx: { padding: 0 }
+                        }
+                    }}
+                    muiFilterAutocompleteProps={{
+                        sx: {
+                            minWidth: '150px',
+                            '& .MuiInputBase-root': {
+                                padding: '0 !important',
+                            },
+                            '& .MuiAutocomplete-inputRoot': {
+                                padding: '4px !important',
+                            }
+                        },
+                        size: 'small',
+                    }}
+                    renderRowActions={({ row }) => (
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <Tooltip title="Edit">
+                                <IconButton
+                                    size="small"
+                                    color="primary"
+                                    onClick={() => handleEdit(row.original)}
+                                >
+                                    <EditIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete">
+                                <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() =>
+                                        setDeleteDialog({ open: true, record: row.original })
+                                    }
+                                >
+                                    <DeleteIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    )}
+                    renderDetailPanel={({ row }) => (
+                        <Box sx={{ py: 2, px: 2, bgcolor: '#fafafa' }}>
+                            <SalesOrderGridMUI soId={row.original.IDNumber} readOnly={true} />
+                        </Box>
+                    )}
+                    renderTopToolbarCustomActions={() => (
+                        <Box sx={{ display: 'flex', gap: 1 }}>
                             <Button
                                 variant="outlined"
                                 size="small"
-                                startIcon={<ClearIcon />}
-                                onClick={clearAllFilters}
+                                startIcon={<RefreshIcon />}
+                                onClick={fetchMasterData}
                             >
-                                Clear All ({activeFilterCount + (searchText ? 1 : 0)})
+                                Refresh
                             </Button>
-                        )}
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<RefreshIcon />}
-                            onClick={fetchMasterData}
-                        >
-                            Refresh
-                        </Button>
-                        <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<AddIcon />}
-                            onClick={handleAddNew}
-                        >
-                            Add New
-                        </Button>
-                    </Box>
-                </Box>
-
-                <TableContainer component={Paper} variant="outlined">
-                    <Table>
-                        <TableHead sx={{ bgcolor: '#f8fafc' }}>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 600 }} />
-
-                                <TableCell sx={{ fontWeight: 600 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <TableSortLabel
-                                            active={sortColumn === 'SONo'}
-                                            direction={sortColumn === 'SONo' ? sortDirection : 'asc'}
-                                            onClick={() => handleSort('SONo')}
-                                        >
-                                            SO No
-                                        </TableSortLabel>
-                                        {/* <IconButton
-                                            size="small"
-                                            onClick={(e) => openFilterMenu(e, 'SONo')}
-                                            sx={{
-                                                p: 0.5,
-                                                color: columnFilters.SONo.length > 0 ? '#1976d2' : 'inherit'
-                                            }}
-                                        >
-                                            <FilterIcon fontSize="small" />
-                                        </IconButton> */}
-                                    </Box>
-                                </TableCell>
-
-                                <TableCell sx={{ fontWeight: 600 }}>
-                                    <TableSortLabel
-                                        active={sortColumn === 'SODate'}
-                                        direction={sortColumn === 'SODate' ? sortDirection : 'asc'}
-                                        onClick={() => handleSort('SODate')}
-                                    >
-                                        SO Date
-                                    </TableSortLabel>
-                                </TableCell>
-
-                                <TableCell sx={{ fontWeight: 600 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <TableSortLabel
-                                            active={sortColumn === 'Division'}
-                                            direction={sortColumn === 'Division' ? sortDirection : 'asc'}
-                                            onClick={() => handleSort('Division')}
-                                        >
-                                            Division
-                                        </TableSortLabel>
-                                        <IconButton
-                                            size="small"
-                                            onClick={(e) => openFilterMenu(e, 'Division')}
-                                            sx={{
-                                                p: 0.5,
-                                                color: columnFilters.Division.length > 0 ? '#1976d2' : 'inherit'
-                                            }}
-                                        >
-                                            <FilterIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                </TableCell>
-
-                                <TableCell sx={{ fontWeight: 600 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <TableSortLabel
-                                            active={sortColumn === 'SOType'}
-                                            direction={sortColumn === 'SOType' ? sortDirection : 'asc'}
-                                            onClick={() => handleSort('SOType')}
-                                        >
-                                            SO Type
-                                        </TableSortLabel>
-                                        <IconButton
-                                            size="small"
-                                            onClick={(e) => openFilterMenu(e, 'SOType')}
-                                            sx={{
-                                                p: 0.5,
-                                                color: columnFilters.SOType.length > 0 ? '#1976d2' : 'inherit'
-                                            }}
-                                        >
-                                            <FilterIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                </TableCell>
-
-                                <TableCell sx={{ fontWeight: 600 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <TableSortLabel
-                                            active={sortColumn === 'CustomerName'}
-                                            direction={sortColumn === 'CustomerName' ? sortDirection : 'asc'}
-                                            onClick={() => handleSort('CustomerName')}
-                                        >
-                                            Customer
-                                        </TableSortLabel>
-                                        <IconButton
-                                            size="small"
-                                            onClick={(e) => openFilterMenu(e, 'CustomerName')}
-                                            sx={{
-                                                p: 0.5,
-                                                color: columnFilters.CustomerName.length > 0 ? '#1976d2' : 'inherit'
-                                            }}
-                                        >
-                                            <FilterIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                </TableCell>
-
-                                <TableCell sx={{ fontWeight: 600 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <TableSortLabel
-                                            active={sortColumn === 'CreatedBy'}
-                                            direction={sortColumn === 'CreatedBy' ? sortDirection : 'asc'}
-                                            onClick={() => handleSort('CreatedBy')}
-                                        >
-                                            Created By
-                                        </TableSortLabel>
-                                        <IconButton
-                                            size="small"
-                                            onClick={(e) => openFilterMenu(e, 'CreatedBy')}
-                                            sx={{
-                                                p: 0.5,
-                                                color: columnFilters.CreatedBy.length > 0 ? '#1976d2' : 'inherit'
-                                            }}
-                                        >
-                                            <FilterIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                </TableCell>
-
-                                <TableCell sx={{ fontWeight: 600 }}>
-                                    <TableSortLabel
-                                        active={sortColumn === 'UpdatedDate'}
-                                        direction={sortColumn === 'UpdatedDate' ? sortDirection : 'asc'}
-                                        onClick={() => handleSort('UpdatedDate')}
-                                    >
-                                        Updated Date
-                                    </TableSortLabel>
-                                </TableCell>
-
-                                <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                    Actions
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {currentPageData.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                                        <Typography color="textSecondary">
-                                            No sales orders found
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                currentPageData.map((row) => (
-                                    <React.Fragment key={row.IDNumber}>
-                                        <TableRow hover>
-                                            <TableCell>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => toggleChildGrid(row.IDNumber)}
-                                                >
-                                                    {expandedRows.has(row.IDNumber)
-                                                        ? <CollapseIcon />
-                                                        : <ExpandIcon />}
-                                                </IconButton>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label={row.SONo}
-                                                    size="small"
-                                                    sx={{ fontWeight: 600 }}
-                                                    color="primary"
-                                                    variant="outlined"
-                                                />
-                                            </TableCell>
-                                            <TableCell>{row.SODate}</TableCell>
-                                            <TableCell>{row.Division}</TableCell>
-                                            <TableCell>{row.SOType}</TableCell>
-                                            <TableCell sx={{ width: 200 }}>{row.CustomerName}</TableCell>
-                                            <TableCell>{row.CreatedBy}</TableCell>
-                                            <TableCell>{row.UpdatedDate}</TableCell>
-                                            <TableCell align="center">
-                                                <Tooltip title="Edit">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="primary"
-                                                        onClick={() => handleEdit(row)}
-                                                    >
-                                                        <EditIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() =>
-                                                            setDeleteDialog({ open: true, record: row })
-                                                        }
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </TableCell>
-                                        </TableRow>
-
-                                        <TableRow>
-                                            <TableCell colSpan={9} sx={{ py: 0, border: 0, bgcolor: '#fafafa' }}>
-                                                <Collapse
-                                                    in={expandedRows.has(row.IDNumber)}
-                                                    timeout="auto"
-                                                    unmountOnExit
-                                                >
-                                                    <Box sx={{ py: 2, px: 2 }}>
-                                                        <SalesOrderGridMUI soId={row.IDNumber} readOnly={true} />
-                                                    </Box>
-                                                </Collapse>
-                                            </TableCell>
-                                        </TableRow>
-                                    </React.Fragment>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-
-                <TablePagination
-                    component="div"
-                    count={filteredData.length}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    rowsPerPage={rowsPerPage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    rowsPerPageOptions={[5, 10, 20, 50]}
+                            <Button
+                                variant="contained"
+                                size="small"
+                                startIcon={<AddIcon />}
+                                onClick={handleAddNew}
+                            >
+                                Add New
+                            </Button>
+                        </Box>
+                    )}
+                    muiTablePaperProps={{
+                        elevation: 0,
+                        sx: { border: '1px solid #e0e0e0' },
+                    }}
+                    initialState={{
+                        pagination: { pageSize: 10, pageIndex: 0 },
+                        density: 'comfortable',
+                        showColumnFilters: true,
+                    }}
                 />
             </Paper>
-
-            <Menu
-                anchorEl={filterMenuAnchor}
-                open={Boolean(filterMenuAnchor)}
-                onClose={closeFilterMenu}
-                PaperProps={{
-                    sx: { maxHeight: 400, minWidth: 200 },
-                }}
-            >
-                {activeFilterColumn && (
-                    <>
-                        <Box sx={{ px: 2, py: 1, fontWeight: 600 }}>
-                            Filter {activeFilterColumn}
-                        </Box>
-                        <Divider />
-                        {getUniqueValues(activeFilterColumn).map((value) => (
-                            <MenuItem
-                                key={value}
-                                onClick={() =>
-                                    toggleFilterValue(activeFilterColumn, value)
-                                }
-                                dense
-                            >
-                                <ListItemIcon>
-                                    <Checkbox
-                                        size="small"
-                                        checked={columnFilters[activeFilterColumn].includes(value)}
-                                    />
-                                </ListItemIcon>
-                                <ListItemText primary={value} />
-                            </MenuItem>
-                        ))}
-                        {columnFilters[activeFilterColumn].length > 0 && (
-                            <>
-                                <Divider />
-                                <MenuItem
-                                    onClick={() => {
-                                        clearColumnFilter(activeFilterColumn);
-                                        closeFilterMenu();
-                                    }}
-                                >
-                                    <ListItemIcon>
-                                        <ClearIcon fontSize="small" />
-                                    </ListItemIcon>
-                                    <ListItemText primary="Clear Filter" />
-                                </MenuItem>
-                            </>
-                        )}
-                    </>
-                )}
-            </Menu>
 
             <Dialog
                 open={deleteDialog.open}
