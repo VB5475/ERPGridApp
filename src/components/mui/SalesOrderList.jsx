@@ -13,12 +13,14 @@ import {
     Alert,
     Chip,
     Tooltip,
+    TextField,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
 } from '@mui/material';
 import {
-    Add as AddIcon,
-    Edit as EditIcon,
-    Delete as DeleteIcon,
-    Refresh as RefreshIcon,
+    Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useHistory } from 'react-router-dom';
 import { MaterialReactTable } from 'material-react-table';
@@ -36,8 +38,8 @@ const SalesOrderList = () => {
         message: '',
         severity: 'info',
     });
-    const history = useHistory();
 
+    const history = useHistory();
 
     useEffect(() => {
         fetchMasterData();
@@ -91,17 +93,260 @@ const SalesOrderList = () => {
         setSnackbar({ open: true, message, severity });
     };
 
-    // Universal dynamic sorting function that detects data type automatically
+    // Date range filter component
+    const DateRangeFilter = ({ column }) => {
+        const [rangeType, setRangeType] = useState('all');
+        const [customStartDate, setCustomStartDate] = useState('');
+        const [customEndDate, setCustomEndDate] = useState('');
+
+        const getDateRange = (type) => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let startDate = new Date(today);
+
+            switch (type) {
+                case 'today':
+                    return { start: today, end: new Date() };
+                case 'yesterday':
+                    startDate.setDate(today.getDate() - 1);
+                    return { start: startDate, end: new Date(startDate.getTime() + 86400000 - 1) };
+                // case 'past_week':
+                //     startDate.setDate(today.getDate() - 7);
+                //     return { start: startDate, end: new Date() };
+                case 'past_week': {
+                    const now = new Date();
+
+                    // Get Monday of current week
+                    const currentWeekDay = now.getDay(); // Sunday=0, Monday=1
+                    const mondayThisWeek = new Date(now);
+                    mondayThisWeek.setDate(now.getDate() - ((currentWeekDay + 6) % 7));
+
+                    // Previous full week
+                    const start = new Date(mondayThisWeek);
+                    start.setDate(start.getDate() - 7);
+
+                    const end = new Date(mondayThisWeek);
+                    end.setDate(end.getDate() - 1); // Sunday of last week
+
+                    return { start, end };
+                }
+
+                case 'past_month':
+                    // const date = startDate.setMonth(today.getMonth() - 1);
+                    // console.log("see date:", new Date(date))
+                    // return { start: startDate, end: new Date() };
+                    const year = today.getFullYear();
+                    const month = today.getMonth(); // November=10, October=9
+
+                    // Previous month calculation
+                    const prevMonth = month - 1;
+
+                    const start = new Date(year, prevMonth, 1); // 1st of previous month
+                    const end = new Date(year, month, 0); // Last date of previous month
+
+                    return { start, end };
+                // case 'past_6_months':
+                //     startDate.setMonth(today.getMonth() - 6);
+                //     return { start: startDate, end: new Date() };
+                case 'past_6_months': {
+                    const year = today.getFullYear();
+                    const month = today.getMonth(); // 0-indexed
+
+                    const end = new Date(year, month, 0); // last day of previous month
+                    const start = new Date(year, month - 6, 1); // first of 6 months before last month
+
+                    return { start, end };
+                }
+                // case 'past_year':
+                //     startDate.setFullYear(today.getFullYear() - 1);
+                //     return { start: startDate, end: new Date() };
+                case 'past_year': {
+                    const year = today.getFullYear();
+
+                    const start = new Date(year - 1, 0, 1);   // Jan 1 last year
+                    const end = new Date(year - 1, 11, 31);   // Dec 31 last year
+
+                    return { start, end };
+                }
+                case 'custom':
+                    if (customStartDate && customEndDate) {
+                        return {
+                            start: new Date(customStartDate),
+                            end: new Date(customEndDate + 'T23:59:59')
+                        };
+                    }
+                    return null;
+                default:
+                    return null;
+            }
+        };
+
+        const handleRangeChange = (type) => {
+            setRangeType(type);
+            if (type === 'all') {
+                column.setFilterValue(undefined);
+            } else if (type !== 'custom') {
+                const range = getDateRange(type);
+                column.setFilterValue(range);
+            }
+        };
+
+        const handleCustomDateApply = () => {
+            if (customStartDate && customEndDate) {
+                const range = getDateRange('custom');
+                column.setFilterValue(range);
+            }
+        };
+
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, maxWidth: 290 }}>
+                <FormControl size="small" fullWidth>
+                    <Select
+                        value={rangeType}
+                        onChange={(e) => handleRangeChange(e.target.value)}
+                        displayEmpty
+                    >
+                        <MenuItem value="all">All</MenuItem>
+                        <MenuItem value="today">Today</MenuItem>
+                        <MenuItem value="yesterday">Yesterday</MenuItem>
+                        <MenuItem value="past_week">Past Week</MenuItem>
+                        <MenuItem value="past_month">Past Month</MenuItem>
+                        <MenuItem value="past_6_months">Past 6 Months</MenuItem>
+                        <MenuItem value="past_year">Past Year</MenuItem>
+                        <MenuItem value="custom">Custom Range</MenuItem>
+                    </Select>
+                </FormControl>
+                {rangeType === 'custom' && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, width: "100%" }}>
+
+                            <TextField
+                                label="Start Date"
+                                type="date"
+                                size="small"
+                                value={customStartDate}
+                                onChange={(e) => setCustomStartDate(e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                            />
+                            <TextField
+                                label="End Date"
+                                type="date"
+                                size="small"
+                                value={customEndDate}
+                                onChange={(e) => setCustomEndDate(e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                            />
+                        </Box>
+
+                        <Button
+                            size="small"
+                            variant="contained"
+                            onClick={handleCustomDateApply}
+                            sx={{ width: "100%" }}
+                            disabled={!customStartDate || !customEndDate}
+                        >
+                            Apply
+                        </Button>
+                    </Box>
+                )}
+            </Box>
+        );
+    };
+
+    // Number range filter component
+    const NumberRangeFilter = ({ column }) => {
+        const [fromValue, setFromValue] = useState('');
+        const [toValue, setToValue] = useState('');
+
+        const handleApply = () => {
+            if (fromValue !== '' || toValue !== '') {
+                column.setFilterValue({ from: fromValue, to: toValue });
+            } else {
+                column.setFilterValue(undefined);
+            }
+        };
+
+        const handleClear = () => {
+            setFromValue('');
+            setToValue('');
+            column.setFilterValue(undefined);
+        };
+
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 150 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, }}>
+                    <TextField
+                        label="From"
+                        type="number"
+                        size="small"
+                        value={fromValue}
+                        // sx={{ width: "100%" }}
+                        onChange={(e) => setFromValue(e.target.value)}
+                    />
+                    <TextField
+                        label="To"
+                        type="number"
+                        size="small"
+                        value={toValue}
+                        // sx={{ width: "100%" }}
+                        onChange={(e) => setToValue(e.target.value)}
+                    />
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button size="small" variant="contained" onClick={handleApply} fullWidth>
+                        Apply
+                    </Button>
+                    <Button size="small" variant="outlined" onClick={handleClear} fullWidth>
+                        Clear
+                    </Button>
+                </Box>
+            </Box>
+        );
+    };
+
+    // Date range filter function
+    const dateRangeFilterFn = (row, columnId, filterValue) => {
+        if (!filterValue || !filterValue.start || !filterValue.end) return true;
+
+        const cellValue = row.getValue(columnId);
+        if (!cellValue) return false;
+
+        const cellDate = new Date(cellValue);
+        if (isNaN(cellDate.getTime())) return false;
+
+        // Normalize dates to compare only date parts (ignore time)
+        const cellDateOnly = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+        const startDateOnly = new Date(filterValue.start.getFullYear(), filterValue.start.getMonth(), filterValue.start.getDate());
+        const endDateOnly = new Date(filterValue.end.getFullYear(), filterValue.end.getMonth(), filterValue.end.getDate());
+
+        return cellDateOnly >= startDateOnly && cellDateOnly <= endDateOnly;
+    };
+
+    // Number range filter function
+    const numberRangeFilterFn = (row, columnId, filterValue) => {
+        if (!filterValue || (filterValue.from === '' && filterValue.to === '')) return true;
+
+        const cellValue = row.getValue(columnId);
+        const numValue = Number(cellValue);
+
+        if (isNaN(numValue)) return false;
+
+        const from = filterValue.from !== '' ? Number(filterValue.from) : -Infinity;
+        const to = filterValue.to !== '' ? Number(filterValue.to) : Infinity;
+
+        return numValue >= from && numValue <= to;
+    };
+
+    // Universal dynamic sorting function
     const dynamicSort = (rowA, rowB, columnId) => {
         const a = rowA.getValue(columnId);
         const b = rowB.getValue(columnId);
 
-        // Handle null/undefined values
         if (a == null && b == null) return 0;
         if (a == null) return 1;
         if (b == null) return -1;
 
-        // Try to detect if values are dates
         const dateA = new Date(a);
         const dateB = new Date(b);
         const isDateA = !isNaN(dateA.getTime()) && typeof a === 'string' &&
@@ -113,63 +358,20 @@ const SalesOrderList = () => {
             return dateA.getTime() - dateB.getTime();
         }
 
-        // Try to detect if values are pure numbers
         const numA = Number(a);
         const numB = Number(b);
 
-        if (!isNaN(numA) && !isNaN(numB) && typeof a !== 'string' ||
-            (!isNaN(numA) && !isNaN(numB) && String(a).trim() === String(numA) && String(b).trim() === String(numB))) {
+        if (!isNaN(numA) && !isNaN(numB)) {
             return numA - numB;
         }
 
-        // Convert to strings for further analysis
-        const strA = String(a);
-        const strB = String(b);
-
-        // Check if strings contain numbers (alphanumeric)
-        const hasNumbersA = /\d/.test(strA);
-        const hasNumbersB = /\d/.test(strB);
-
-        if (hasNumbersA && hasNumbersB) {
-            // Alphanumeric sorting: split into text and number parts
-            const regex = /(\d+)|(\D+)/g;
-            const partsA = strA.match(regex) || [];
-            const partsB = strB.match(regex) || [];
-
-            const maxLength = Math.max(partsA.length, partsB.length);
-
-            for (let i = 0; i < maxLength; i++) {
-                const partA = partsA[i] || '';
-                const partB = partsB[i] || '';
-
-                // Both parts are numbers
-                const isNumPartA = /^\d+$/.test(partA);
-                const isNumPartB = /^\d+$/.test(partB);
-
-                if (isNumPartA && isNumPartB) {
-                    const diff = parseInt(partA) - parseInt(partB);
-                    if (diff !== 0) return diff;
-                } else {
-                    // String comparison
-                    const comparison = partA.localeCompare(partB, undefined, {
-                        sensitivity: 'base',
-                        numeric: true
-                    });
-                    if (comparison !== 0) return comparison;
-                }
-            }
-
-            return 0;
-        }
-
-        // Default: string comparison with natural sorting
-        return strA.localeCompare(strB, undefined, {
+        return String(a).localeCompare(String(b), undefined, {
             sensitivity: 'base',
             numeric: true
         });
     };
 
-    // Custom "contains" filter function for all columns
+    // Custom "contains" filter function
     const containsFilterFn = (row, id, filterValue) => {
         const cellValue = row.getValue(id);
         if (cellValue == null) return false;
@@ -180,106 +382,92 @@ const SalesOrderList = () => {
         return cellString.includes(searchValue);
     };
 
-    // Generate columns dynamically from data
+    // Generate columns dynamically with custom filters
     const columns = useMemo(() => {
         if (!masterData?.length) return [];
-        const excludedKeys = ['Division', "CreatedDate", "CreatedBy", "UpdatedBy", "UpdatedDate"];
 
-        return Object.keys(masterData[0])
-            .filter(key => !excludedKeys.includes(key))
-            .map(key => {
-                const lowerKey = key.toLowerCase();
-                const isDateField = lowerKey.includes('date') || lowerKey.includes('time');
-                const isKeyField = lowerKey.includes('no') || lowerKey.includes('id');
-                const trimmedKey = key?.trim();
+        // Only show these columns
+        const includedKeys = ['IDNumber', 'SONo', 'SODate', 'SOType', 'CustomerName'];
 
-                // Helper function to format cell value consistently
-                const formatCellValue = (val) => {
-                    if (val == null || val === '') return '';
+        return includedKeys.map(key => {
+            const lowerKey = key.toLowerCase();
+            const isDateField = key === 'SODate';
+            const isNumberRangeField = key === 'SONo' || key === 'IDNumber';
+            const trimmedKey = key?.trim();
 
-                    if (isDateField) {
-                        const date = new Date(val);
-                        if (!isNaN(date.getTime())) {
-                            // Check if the original value contains time components
-                            const hasTime = String(val).includes(':') ||
-                                String(val).includes('T') ||
-                                String(val).includes('AM') ||
-                                String(val).includes('PM');
+            const formatCellValue = (val) => {
+                if (val == null || val === '') return '';
 
-                            return hasTime || lowerKey.includes('time') || lowerKey.includes('updated')
-                                ? date.toLocaleString()
-                                : date.toLocaleDateString();
-                        }
+                if (isDateField) {
+                    const date = new Date(val);
+                    if (!isNaN(date.getTime())) {
+                        return date.toLocaleDateString();
                     }
-                    return String(val);
-                };
+                }
+                return String(val);
+            };
 
-                // Get unique values for this column (format dates for filtering)
-                const uniqueValues = [...new Set(
+            // Get unique values for autocomplete filters (for non-custom filter columns)
+            const uniqueValues = !isDateField && !isNumberRangeField
+                ? [...new Set(
                     masterData
                         .map(row => formatCellValue(row[key]))
                         .filter(val => val !== '')
                 )].sort((a, b) => {
-                    // Sort unique values for better UX
                     return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-                });
+                })
+                : [];
 
-                return {
-                    accessorKey: trimmedKey,
-                    header: trimmedKey,
-                    size: 20,
-                    sortingFn: dynamicSort,
-                    // Enable autocomplete filter with unique values for searchable dropdowns
-                    filterVariant: uniqueValues.length <= 100 ? 'autocomplete' : 'text',
-                    filterSelectOptions: uniqueValues.length <= 100
-                        ? uniqueValues
-                        : undefined,
-                    // Use contains filter for text fields
-                    filterFn: uniqueValues.length > 100 ? containsFilterFn : (row, id, filterValue) => {
-                        const cellValue = row.getValue(id);
-                        const formattedValue = formatCellValue(cellValue);
+            // Configure column based on type
+            let columnConfig = {
+                accessorKey: trimmedKey,
+                header: trimmedKey,
+                size: key === 'IDNumber' ? 100 : 150,
+                sortingFn: dynamicSort,
+                Cell: ({ cell }) => {
+                    const value = cell.getValue();
 
-                        // Handle array of filter values (for autocomplete multi-select)
-                        if (Array.isArray(filterValue)) {
-                            return filterValue.includes(formattedValue);
+                    if (value == null || value === '') return '';
+
+                    if (isDateField) {
+                        const date = new Date(value);
+                        if (!isNaN(date.getTime())) {
+                            return date.toLocaleDateString();
                         }
+                    }
 
-                        // Exact match for single value in autocomplete
-                        return formattedValue === filterValue;
-                    },
-                    Cell: ({ cell }) => {
-                        const value = cell.getValue();
+                    if (isNumberRangeField) {
+                        return (
+                            <Chip
+                                label={value}
+                                size="small"
+                                sx={{ fontWeight: 600 }}
+                                color="primary"
+                                variant="outlined"
+                            />
+                        );
+                    }
 
-                        if (value == null || value === '') return '';
-                        if (isDateField) {
-                            const date = new Date(value);
-                            if (!isNaN(date.getTime())) {
-                                // Check if the original value contains time components
-                                const hasTime = String(value).includes(':') ||
-                                    String(value).includes('T') ||
-                                    String(value).includes('AM') ||
-                                    String(value).includes('PM');
+                    return value;
+                },
+            };
 
-                                return hasTime || lowerKey.includes('time') || lowerKey.includes('updated')
-                                    ? date.toLocaleString()
-                                    : date.toLocaleDateString();
-                            }
-                        }
-                        if (isKeyField) {
-                            return (
-                                <Chip
-                                    label={value}
-                                    size="small"
-                                    sx={{ fontWeight: 600 }}
-                                    color="primary"
-                                    variant="outlined"
-                                />
-                            );
-                        }
-                        return value;
-                    },
-                };
-            });
+            // Add custom filter configurations
+            if (isDateField) {
+                columnConfig.Filter = ({ column }) => <DateRangeFilter column={column} />;
+                columnConfig.filterFn = dateRangeFilterFn;
+            } else if (isNumberRangeField) {
+                columnConfig.Filter = ({ column }) => <NumberRangeFilter column={column} />;
+                columnConfig.filterFn = numberRangeFilterFn;
+            } else {
+                // Use autocomplete for other columns
+                columnConfig.filterVariant = uniqueValues.length <= 100 ? 'autocomplete' : 'text';
+                columnConfig.filterSelectOptions = uniqueValues.length <= 100 ? uniqueValues : undefined;
+                columnConfig.filterFn = uniqueValues.length > 100 ? containsFilterFn : undefined;
+            }
+
+            return columnConfig;
+        });
     }, [masterData]);
 
     return (
