@@ -642,14 +642,14 @@ const SalesOrderFormMUI = () => {
                                 </Button>
                             </Box>
 
-                            {(soId || isEditMode) && (
-                                <Box sx={{ mt: 3 }}>
-                                    {/* SalesOrderGridMUI component would go here */}
-                                    <Typography variant="body2" sx={{ color: '#64748b', textAlign: 'center' }}>
-                                        <SalesOrderGridMUI soId={soId} />
-                                    </Typography>
-                                </Box>
-                            )}
+                            {/* {(soId || isEditMode) && ( */}
+                            <Box sx={{ mt: 3 }}>
+                                {/* SalesOrderGridMUI component would go here */}
+                                <Typography variant="body2" sx={{ color: '#64748b', textAlign: 'center' }}>
+                                    <SalesOrderGridMUI soId={soId} />
+                                </Typography>
+                            </Box>
+                            {/* )} */}
 
                             <Paper
                                 elevation={0}
