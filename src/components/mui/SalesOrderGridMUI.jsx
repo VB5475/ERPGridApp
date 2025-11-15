@@ -7,11 +7,8 @@ import {
     Alert, CircularProgress
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import { useOrderDetails } from '../../hooks/useOrderDetails';
-import { useDropdownData } from '../../hooks/useDropdownData';
-import { useRowEditor } from '../../hooks/useRowEditor';
-import { OrderDetailRow } from './common/OrderDetailRow';
-import { EditableRow } from './common/EditableRow';
+import { useOrderDetails, useDropdownData, useRowEditor } from '../../hooks/SalesOrderGrid_hooks';
+import { OrderDetailRow, EditableRow } from './common/SalesOrderGrid_common';
 import { calculateTotal } from '../../utils/validationUtils';
 import { API_ENDPOINTS } from '../../constants/api';
 

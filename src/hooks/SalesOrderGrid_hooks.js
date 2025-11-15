@@ -1,8 +1,86 @@
-// hooks/useRowEditor.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../constants/api';
 import { validateRow, checkDuplicateRow } from '../utils/validationUtils';
 import { createSavePayload } from '../utils/dataMapper';
+import { mapOrderDetail } from '../utils/dataMapper';
+
+export const useDropdownData = () => {
+    const [mainGroups, setMainGroups] = useState([]);
+    const [subMainGroups, setSubMainGroups] = useState([]);
+    const [items, setItems] = useState([]);
+    const [units, setUnits] = useState([]);
+
+    const fetchData = async (url, setter, errorMsg) => {
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            setter(data || []);
+        } catch (error) {
+            throw new Error(errorMsg + error.message);
+        }
+    };
+
+    const fetchMainGroups = () =>
+        fetchData(API_ENDPOINTS.MAIN_GROUPS, setMainGroups, 'Error fetching main groups: ');
+
+    const fetchSubMainGroups = (mainGroupId) => {
+        if (!mainGroupId) return;
+        return fetchData(API_ENDPOINTS.SUB_MAIN_GROUPS(mainGroupId), setSubMainGroups, 'Error fetching sub main groups: ');
+    };
+
+    const fetchItems = (mainGroupId, subMainGroupId) => {
+        if (!mainGroupId || !subMainGroupId) return;
+        return fetchData(API_ENDPOINTS.ITEMS(mainGroupId, subMainGroupId), setItems, 'Error fetching items: ');
+    };
+
+    const fetchUnits = (itemId) => {
+        if (!itemId) return;
+        return fetchData(API_ENDPOINTS.UNITS(itemId), setUnits, 'Error fetching units: ');
+    };
+
+    return {
+        mainGroups,
+        subMainGroups,
+        items,
+        units,
+        fetchMainGroups,
+        fetchSubMainGroups,
+        fetchItems,
+        fetchUnits
+    };
+};
+
+export const useOrderDetails = (soId) => {
+    const [orderDetails, setOrderDetails] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchOrderDetails = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(API_ENDPOINTS.ORDER_DETAILS(soId));
+            const data = await response.json();
+
+            if (data && Array.isArray(data) && data.length > 0) {
+                setOrderDetails(data.map(mapOrderDetail));
+            } else {
+                setOrderDetails([]);
+            }
+            setError(null);
+        } catch (err) {
+            setError('Error fetching order details: ' + err.message);
+            setOrderDetails([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (soId) fetchOrderDetails();
+    }, [soId]);
+
+    return { orderDetails, loading, error, refetch: fetchOrderDetails };
+};
 
 export const useRowEditor = (soId, orderDetails, onSuccess, showSnackbar) => {
     const [editingRowId, setEditingRowId] = useState(null);
