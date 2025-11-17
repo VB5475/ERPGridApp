@@ -10,7 +10,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { useOrderDetails, useDropdownData, useRowEditor } from '../../hooks/SalesOrderGrid_hooks';
 import { OrderDetailRow, EditableRow } from './common/SalesOrderGrid_common';
 import { calculateTotal } from '../../utils/validationUtils';
-import { API_ENDPOINTS } from '../../constants/api';
+import { SALESORDER_GRID_API_ENDPOINTS } from '../../constants/api';
 
 const SalesOrderGridMUI = forwardRef(({ soId, readOnly = false }, ref) => {
     const [deleteDialog, setDeleteDialog] = React.useState({ open: false, row: null });
@@ -78,7 +78,7 @@ const SalesOrderGridMUI = forwardRef(({ soId, readOnly = false }, ref) => {
     const handleDelete = async (row) => {
         try {
             setLoading(true);
-            await fetch(API_ENDPOINTS.DELETE_DETAIL(row.IDNumber));
+            await fetch(SALESORDER_GRID_API_ENDPOINTS.DELETE_DETAIL(row.IDNumber));
             showSnackbar('Item deleted successfully!', 'success');
             await refetch();
             setDeleteDialog({ open: false, row: null });

@@ -31,3 +31,13 @@ export const calculateAmount = (qty, rate) => (qty || 0) * (rate || 0);
 export const calculateTotal = (orderDetails) => {
     return orderDetails.reduce((sum, row) => sum + (row.Amount || 0), 0);
 };
+
+export const validateForm = (formData) => {
+    const { soDate, division, soType, customer } = formData;
+
+    if (!soDate || !division || !soType || !customer) {
+        return 'Please fill in all required fields';
+    }
+
+    return null;
+};

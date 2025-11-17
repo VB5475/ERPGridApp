@@ -57,3 +57,28 @@ export const getDateRange = (type, customStart, customEnd) => {
 
     return ranges[type]?.() || null;
 };
+
+
+export const formatDateForInput = (dateStr) => {
+    try {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const month = parts[0].padStart(2, '0');
+            const day = parts[1].padStart(2, '0');
+            const year = parts[2];
+            return `${year}-${month}-${day}`;
+        }
+    } catch (e) {
+        console.error('Date parsing error:', e);
+    }
+    return new Date().toISOString().split('T')[0];
+};
+
+export const formatDateForAPI = (date) => {
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+};

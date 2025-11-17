@@ -3,8 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Chip } from '@mui/material';
 import { DateRangeFilter, NumberRangeFilter } from '../components/mui/common/SalesOrderList_common';
 import { dateRangeFilterFn, numberRangeFilterFn, dynamicSort } from '../utils/filterUtils';
-
-const API_BASE = 'http://122.179.135.100:8095/wsDataPool/WebAPI.aspx';
+import { API_BASE } from '../constants/api';
 
 export const useSalesOrders = () => {
     const [masterData, setMasterData] = useState([]);

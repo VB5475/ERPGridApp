@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { API_ENDPOINTS } from '../constants/api';
+import { SALESORDER_GRID_API_ENDPOINTS } from '../constants/api';
 import { validateRow, checkDuplicateRow } from '../utils/validationUtils';
 import { createSavePayload } from '../utils/dataMapper';
 import { mapOrderDetail } from '../utils/dataMapper';
@@ -21,21 +21,21 @@ export const useDropdownData = () => {
     };
 
     const fetchMainGroups = () =>
-        fetchData(API_ENDPOINTS.MAIN_GROUPS, setMainGroups, 'Error fetching main groups: ');
+        fetchData(SALESORDER_GRID_API_ENDPOINTS.MAIN_GROUPS, setMainGroups, 'Error fetching main groups: ');
 
     const fetchSubMainGroups = (mainGroupId) => {
         if (!mainGroupId) return;
-        return fetchData(API_ENDPOINTS.SUB_MAIN_GROUPS(mainGroupId), setSubMainGroups, 'Error fetching sub main groups: ');
+        return fetchData(SALESORDER_GRID_API_ENDPOINTS.SUB_MAIN_GROUPS(mainGroupId), setSubMainGroups, 'Error fetching sub main groups: ');
     };
 
     const fetchItems = (mainGroupId, subMainGroupId) => {
         if (!mainGroupId || !subMainGroupId) return;
-        return fetchData(API_ENDPOINTS.ITEMS(mainGroupId, subMainGroupId), setItems, 'Error fetching items: ');
+        return fetchData(SALESORDER_GRID_API_ENDPOINTS.ITEMS(mainGroupId, subMainGroupId), setItems, 'Error fetching items: ');
     };
 
     const fetchUnits = (itemId) => {
         if (!itemId) return;
-        return fetchData(API_ENDPOINTS.UNITS(itemId), setUnits, 'Error fetching units: ');
+        return fetchData(SALESORDER_GRID_API_ENDPOINTS.UNITS(itemId), setUnits, 'Error fetching units: ');
     };
 
     return {
@@ -58,7 +58,7 @@ export const useOrderDetails = (soId) => {
     const fetchOrderDetails = async () => {
         try {
             setLoading(true);
-            const response = await fetch(API_ENDPOINTS.ORDER_DETAILS(soId));
+            const response = await fetch(SALESORDER_GRID_API_ENDPOINTS.ORDER_DETAILS(soId));
             const data = await response.json();
 
             if (data && Array.isArray(data) && data.length > 0) {
@@ -103,7 +103,7 @@ export const useRowEditor = (soId, orderDetails, onSuccess, showSnackbar) => {
         try {
             setSavingRowId(isNew ? 'new' : editingRowId);
             const payload = createSavePayload(row, soId);
-            const response = await fetch(API_ENDPOINTS.SAVE_DETAIL(JSON.stringify(payload)));
+            const response = await fetch(SALESORDER_GRID_API_ENDPOINTS.SAVE_DETAIL(JSON.stringify(payload)));
             const result = await response.json();
 
             if (result?.[0]?.ErrCode === "1") {
