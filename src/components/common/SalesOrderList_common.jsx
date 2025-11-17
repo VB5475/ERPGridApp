@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Box, Button, TextField, Select, MenuItem, FormControl } from '@mui/material';
-import { getDateRange } from '../../../utils/dateUtils';
+import { getDateRange } from '../../utils/dateUtils';
 
 const DATE_RANGE_OPTIONS = [
     { value: 'all', label: 'All' },

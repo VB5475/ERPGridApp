@@ -16,8 +16,8 @@ import {
   useHistory,
   useParams,
 } from 'react-router-dom';
-import SalesOrderFormMUI from './components/mui/SalesOrderFormMUI';
-import SalesOrderList from './components/mui/SalesOrderList';
+import SalesOrderFormMUI from './components/SalesOrderFormMUI';
+import SalesOrderList from './components/SalesOrderList';
 
 const theme = createTheme({
   palette: {

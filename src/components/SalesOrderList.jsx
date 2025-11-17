@@ -7,7 +7,7 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Refresh as Refr
 import { useHistory } from 'react-router-dom';
 import { MaterialReactTable } from 'material-react-table';
 import SalesOrderGridMUI from './SalesOrderGridMUI';
-import { useSalesOrders, useTableColumns } from '../../hooks/SalesOrderlist_hooks.jsx';
+import { useSalesOrders, useTableColumns } from '../hooks/SalesOrderlist_hooks.jsx';
 
 const TABLE_CONFIG = {
     enableRowActions: true,

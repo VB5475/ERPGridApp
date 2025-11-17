@@ -1,7 +1,7 @@
 // hooks/useSalesOrders.js
 import { useState, useEffect, useMemo } from 'react';
 import { Chip } from '@mui/material';
-import { DateRangeFilter, NumberRangeFilter } from '../components/mui/common/SalesOrderList_common';
+import { DateRangeFilter, NumberRangeFilter } from '../components/common/SalesOrderList_common';
 import { dateRangeFilterFn, numberRangeFilterFn, dynamicSort } from '../utils/filterUtils';
 import { API_BASE } from '../constants/api';
 

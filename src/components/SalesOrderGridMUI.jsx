@@ -7,10 +7,10 @@ import {
     Alert, CircularProgress
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import { useOrderDetails, useDropdownData, useRowEditor } from '../../hooks/SalesOrderGrid_hooks';
+import { useOrderDetails, useDropdownData, useRowEditor } from '../hooks/SalesOrderGrid_hooks';
 import { OrderDetailRow, EditableRow } from './common/SalesOrderGrid_common';
-import { calculateTotal } from '../../utils/validationUtils';
-import { SALESORDER_GRID_API_ENDPOINTS } from '../../constants/api';
+import { calculateTotal } from '../utils/validationUtils';
+import { SALESORDER_GRID_API_ENDPOINTS } from '../constants/api';
 
 const SalesOrderGridMUI = forwardRef(({ soId, readOnly = false }, ref) => {
     const [deleteDialog, setDeleteDialog] = React.useState({ open: false, row: null });

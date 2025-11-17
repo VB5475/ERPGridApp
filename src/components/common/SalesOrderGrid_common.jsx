@@ -2,7 +2,7 @@
 import React from 'react';
 import { TableRow, TableCell, Typography, Chip, IconButton, Tooltip, Zoom, CircularProgress, Autocomplete, TextField } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material';
-import { calculateAmount } from '../../../utils/validationUtils';
+import { calculateAmount } from '../../utils/validationUtils';
 
 export const OrderDetailRow = ({ row, readOnly, onEdit, onDelete, disabled }) => (
     <TableRow

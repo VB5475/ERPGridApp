@@ -1,10 +1,10 @@
 import React, { useRef } from 'react';
 import { Box, Paper, Grid, Typography, CircularProgress, Alert, Snackbar, Fade } from '@mui/material';
 import { useHistory, useParams } from 'react-router-dom';
-import { useDropdowns, useSalesOrderForm } from '../../hooks/SalesOrderForm_hooks';
-import { FormTextField, FormAutocomplete, ActionButtons, QuickGuide } from '../../components/mui/common/SalesOrderForm_common';
+import { useDropdowns, useSalesOrderForm } from '../hooks/SalesOrderForm_hooks';
+import { FormTextField, FormAutocomplete, ActionButtons, QuickGuide } from '../components/common/SalesOrderForm_common';
 import SalesOrderGridMUI from './SalesOrderGridMUI';
-import { FORM_FIELD_CONFIG, AUTOCOMPLETE_CONFIG } from '../../constants/formConfig';
+import { FORM_FIELD_CONFIG, AUTOCOMPLETE_CONFIG } from '../constants/formConfig';
 
 const SalesOrderFormMUI = () => {
     const history = useHistory();
