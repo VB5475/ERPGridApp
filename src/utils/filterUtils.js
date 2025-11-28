@@ -27,6 +27,24 @@ export const numberRangeFilterFn = (row, columnId, filterValue) => {
     return cellValue >= from && cellValue <= to;
 };
 
+export const multiSelectFilterFn = (row, columnId, filterValue) => {
+    if (filterValue == null) return true;
+
+    const cellValue = row.getValue(columnId);
+    if (cellValue == null) return false;
+
+    const normalize = (val) => String(val).toLowerCase();
+    const normalizedCellValue = normalize(cellValue);
+
+    if (Array.isArray(filterValue)) {
+        if (!filterValue.length) return true;
+        return filterValue.some((selected) => normalize(selected) === normalizedCellValue);
+    }
+
+    const normalizedFilterValue = normalize(filterValue);
+    return normalizedCellValue.includes(normalizedFilterValue);
+};
+
 export const dynamicSort = (rowA, rowB, columnId) => {
     const a = rowA.getValue(columnId);
     const b = rowB.getValue(columnId);
