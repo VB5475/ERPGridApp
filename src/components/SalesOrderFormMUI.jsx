@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { Box } from '@mui/material';
 import FormMUI from './common/FormMUI';
@@ -62,9 +62,9 @@ const AUTOCOMPLETE_CONFIG = [
 ];
 
 const useDropdowns = () => {
-    const [divisions, setDivisions] = React.useState([]);
-    const [soTypes, setSOTypes] = React.useState([]);
-    const [customers, setCustomers] = React.useState([]);
+    const [divisions, setDivisions] = useState([]);
+    const [soTypes, setSOTypes] = useState([]);
+    const [customers, setCustomers] = useState([]);
 
     const fetchData = async (url, setter, errorMsg) => {
         try {
@@ -118,7 +118,7 @@ const SalesOrderFormMUI = () => {
         dropdowns.fetchDivisions();
     }, []);
 
-    const [showSnackbar, setShowSnackbar] = React.useState(null);
+    const [showSnackbar, setShowSnackbar] = useState(null);
 
     // Form hook
     const form = useForm({
